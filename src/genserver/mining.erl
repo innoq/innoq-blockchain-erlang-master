@@ -4,4 +4,5 @@
 ]).
 
 proof(JsonStart, JsonEnd) ->
-  {ok, <<"{fake: 'news'}">>}.
+  {ok, FakeBlock} = application:get_env(master, genesis_block),
+  {ok, FakeBlock}.
