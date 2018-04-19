@@ -28,17 +28,19 @@ proof(JsonStart, JsonEnd) ->
     io:format("receiving...\n", []),
     io:format("PID: ~p\n", [self()]),
     {RBlock, RSha256} = receive
-			    {true, Block, Sha256} ->
+			    {ok, Block, Sha256} ->
 				io:format("Received: ~p, ~p\n", [Block, Sha256]),
 				{Block, Sha256};
+                            {error, Message} ->
+				{"", Message}
 			    Any ->
 				io:format("~p", [Any])
 			after 15000 ->
-				{"", ""}
+				{"", "timeout"}
 			end,
     %{ok, FakeBlock} = application:get_env(master, genesis_block),
     %{ok, FakeBlockSha256} = application:get_env(master, genesis_block_sha256),
-    {ok, RBlock, bin_to_hexstr(RSha256)}.
+    {ok, RBlock, RSha256}.
 
 
 %%--------------------------------------------------------------------
@@ -178,6 +180,3 @@ format_status(_Opt, Status) ->
 %%% Internal functions
 %%%===================================================================
 
-bin_to_hexstr(Bin) ->
-  list_to_binary(lists:flatten([io_lib:format("~2.16.0B", [X]) ||
-    X <- binary_to_list(Bin)])).
