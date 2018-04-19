@@ -19,5 +19,9 @@ init([]) ->
     State = {state,
            {state, start_link, []},
            permanent, 5000, worker, [state]},
-    Processes = [Web, State],
+    Mining = {mining,
+           {mining, start_link, []},
+           permanent, 5000, worker, [mining]},
+
+    Processes = [Web, State, Mining],
     {ok, { {one_for_one, 10, 10}, Processes} }.
