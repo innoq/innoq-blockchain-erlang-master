@@ -19,16 +19,26 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {}).
-
 %%%===================================================================
 %%% API
 %%%===================================================================
 
 proof(JsonStart, JsonEnd) ->
-  {ok, FakeBlock} = application:get_env(master, genesis_block),
-  {ok, FakeBlockSha256} = application:get_env(master, genesis_block_sha256),
-  {ok, FakeBlock, FakeBlockSha256}.
+    gen_server:cast({global, ?SERVER}, {proof, self(), JsonStart, JsonEnd}),
+    io:format("receiving...\n", []),
+    io:format("PID: ~p\n", [self()]),
+    {RBlock, RSha256} = receive
+			    {true, Block, Sha256} ->
+				io:format("Received: ~p, ~p\n", [Block, Sha256]),
+				{Block, Sha256};
+			    Any ->
+				io:format("~p", [Any])
+			after 15000 ->
+				{"", ""}
+			end,
+    %{ok, FakeBlock} = application:get_env(master, genesis_block),
+    %{ok, FakeBlockSha256} = application:get_env(master, genesis_block_sha256),
+    {ok, RBlock, bin_to_hexstr(RSha256)}.
 
 
 %%--------------------------------------------------------------------
@@ -60,7 +70,7 @@ start_link() ->
 			      ignore.
 init([]) ->
     process_flag(trap_exit, true),
-    {ok, #state{}}.
+    {ok, #{}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -92,7 +102,22 @@ handle_call(_Request, _From, State) ->
 			 {noreply, NewState :: term(), Timeout :: timeout()} |
 			 {noreply, NewState :: term(), hibernate} |
 			 {stop, Reason :: term(), NewState :: term()}.
+
+handle_cast({node_up, Name}, State) ->
+    io:format("Node ~p is up.\n", [Name]),
+    {noreply, State};
+handle_cast({node_down}, State) ->    
+    {noreply, State};
+handle_cast({proof_done, Origin, Block, Sha256}, State) ->
+    Origin ! {ok, Block, Sha256},
+    {noreply, State};
+handle_cast({proof, Origin, JsonStart, JsonEnd}, State) ->
+    %{ok, FakeBlock} = application:get_env(master, genesis_block),
+    %{ok, FakeBlockSha256} = application:get_env(master, genesis_block_sha256),
+    gen_server:cast({global, slave_server}, {mine, Origin, JsonStart, JsonEnd, 0, 1000000, 2}),
+    {noreply, State};
 handle_cast(_Request, State) ->
+    io:format("Wrong Cast\n", []),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -152,3 +177,7 @@ format_status(_Opt, Status) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+bin_to_hexstr(Bin) ->
+  list_to_binary(lists:flatten([io_lib:format("~2.16.0B", [X]) ||
+    X <- binary_to_list(Bin)])).
