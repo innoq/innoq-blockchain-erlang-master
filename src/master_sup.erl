@@ -16,5 +16,8 @@ init([]) ->
     Web = {webmachine_mochiweb,
            {webmachine_mochiweb, start, [master_config:web_config()]},
            permanent, 5000, worker, [mochiweb_socket_server]},
-    Processes = [Web],
+    State = {state,
+           {state, start_link, []},
+           permanent, 5000, worker, [state]},
+    Processes = [Web, State],
     {ok, { {one_for_one, 10, 10}, Processes} }.
