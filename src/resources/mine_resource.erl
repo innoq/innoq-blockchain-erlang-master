@@ -1,4 +1,4 @@
--module(master_resource).
+-module(mine_resource).
 -export([
     init/1,
     content_types_provided/2,
@@ -18,6 +18,12 @@ content_types_provided(RD, Ctx) ->
 allowed_methods(RD, Ctx) ->
     {['GET', 'HEAD'], RD, Ctx}.
 
+fake_proof(JsonStart, JsonEnd) ->
+    {ok, <<JsonStart/binary, JsonEnd/binary>>, <<"-1">>}.
+
 -spec to_json(wrq:reqdata(), term()) -> {iodata(), wrq:reqdata(), term()}.
 to_json(ReqData, State) ->
-    {<<"{NotImplemented: 'yet'}">>, ReqData, State}.
+    {JsonStart, JsonEnd} = block_utils:build_new_block_data(),
+    {ok, JsonBinary, Sha256} = fake_proof(JsonStart, JsonEnd),
+    state:append_to_chain(#{json => JsonBinary, sha256 => Sha256}),
+    {JsonBinary, ReqData, State}.

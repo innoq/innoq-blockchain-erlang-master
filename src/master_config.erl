@@ -9,8 +9,8 @@
 dispatch() ->
     lists:flatten([
         {[], master_resource, []},
-        {[blocks], blocks_resource, []},
-        {[mine], mine_resource, []}
+        {["blocks"], blocks_resource, []},
+        {["mine"], mine_resource, []}
     ]).
 
 web_config() ->

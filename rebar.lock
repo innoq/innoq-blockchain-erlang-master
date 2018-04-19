@@ -1,8 +1,18 @@
-[{<<"mochiweb">>,
+{"1.1.0",
+[{<<"jiffy">>,{pkg,<<"jiffy">>,<<"0.15.1">>},0},
+ {<<"mochiweb">>,
   {git,"https://github.com/mochi/mochiweb",
        {ref,"23dc11959affd9b0849c2ac0ff4200c1c82aa80c"}},
   1},
+ {<<"unixtime">>,
+  {git,"https://github.com/iambumblehead/unixtime.git",
+       {ref,"5a69041f6f53c3ed72e5187bc31a01d32cbe4e78"}},
+  0},
  {<<"webmachine">>,
   {git,"git://github.com/webmachine/webmachine",
        {ref,"c6c2f2d4e41a2761840db7f3668a4e263a93d089"}},
-  0}].
+  0}]}.
+[
+{pkg_hash,[
+ {<<"jiffy">>, <<"BE83B09388DA1A6C7E798207C9D6A1C4D71BB95FCC387D37D35861788F49AB97">>}]}
+].

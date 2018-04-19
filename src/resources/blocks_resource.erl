@@ -1,4 +1,4 @@
--module(master_resource).
+-module(blocks_resource).
 -export([
     init/1,
     content_types_provided/2,
@@ -20,4 +20,5 @@ allowed_methods(RD, Ctx) ->
 
 -spec to_json(wrq:reqdata(), term()) -> {iodata(), wrq:reqdata(), term()}.
 to_json(ReqData, State) ->
-    {<<"{NotImplemented: 'yet'}">>, ReqData, State}.
+    {ok, Chain} = state:get_chain(),
+    {block_utils:chain_to_json(Chain), ReqData, State}.

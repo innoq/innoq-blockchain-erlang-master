@@ -11,7 +11,14 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0]).
+-export([
+	start_link/0,
+	get_chain/0,
+	get_last_chain_element/0,
+	get_next_index/0,
+	append_to_chain/1,
+	fetch_transactions/0
+]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -19,11 +26,37 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {}).
+-record(state, {chain, open_transactions}).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Returns the open transactions and deletes the queue at the same time
+%% @end
+%% -------------------------------------------------------------------
+fetch_transactions() ->
+  gen_server:call(?MODULE, {fetch_transactions}).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% The current chain
+%% @end
+%% -------------------------------------------------------------------
+get_chain() ->
+  gen_server:call(?MODULE, {get_chain}).
+
+get_last_chain_element() ->
+  gen_server:call(?MODULE, {get_last_chain_element}).
+
+get_next_index() ->
+  gen_server:call(?MODULE, {get_next_index}).
+
+append_to_chain(NewChainElement) ->
+  gen_server:call(?MODULE, {append_to_chain, NewChainElement}).
+
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -54,7 +87,8 @@ start_link() ->
 			      ignore.
 init([]) ->
     process_flag(trap_exit, true),
-    {ok, #state{}}.
+	InitalChain = [block_utils:first_chain_element()],
+    {ok, #state{chain=InitalChain, open_transactions=[]}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -71,6 +105,22 @@ init([]) ->
 			 {noreply, NewState :: term(), hibernate} |
 			 {stop, Reason :: term(), Reply :: term(), NewState :: term()} |
 			 {stop, Reason :: term(), NewState :: term()}.
+handle_call({fetch_transactions}, _From, State) ->
+    OpenTransactions = State#state.open_transactions,
+	{reply, {ok, OpenTransactions}, State#state{open_transactions=[]}};
+
+handle_call({get_chain}, _From, State) ->
+	{reply, {ok, State#state.chain}, State};
+
+handle_call({get_last_chain_element}, _From, State) ->
+	{reply, {ok, lists:last(State#state.chain)}, State};
+
+handle_call({get_next_index}, _From, State) ->
+	{reply, {ok, length(State#state.chain) + 1}, State};
+
+handle_call({append_to_chain, NewChainElement}, _From, State) ->
+	{reply, {ok}, State#state{chain=State#state.chain++[NewChainElement]}};
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
