@@ -20,5 +20,5 @@ allowed_methods(RD, Ctx) ->
 
 -spec to_json(wrq:reqdata(), term()) -> {iodata(), wrq:reqdata(), term()}.
 to_json(ReqData, State) ->
-    {ok, JsonBinary} = mining:proof(<<"{">>, <<"}">>),
+    {ok, JsonBinary, Sha265} = mining:proof(<<"{">>, <<"}">>),
     {JsonBinary, ReqData, State}.
