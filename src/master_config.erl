@@ -8,7 +8,9 @@
 -spec dispatch() -> [webmachine_dispatcher:route()].
 dispatch() ->
     lists:flatten([
-        {[], master_resource, []}
+        {[], master_resource, []},
+        {[blocks], blocks_resource, []},
+        {[mine], mine_resource, []}
     ]).
 
 web_config() ->
