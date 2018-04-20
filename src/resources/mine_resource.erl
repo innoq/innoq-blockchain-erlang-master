@@ -29,6 +29,8 @@ to_json(ReqData, State) ->
         {ok, JsonBinary, Sha256} ->
             state:append_to_chain(#{json => JsonBinary, sha256 => Sha256}),
             {JsonBinary, ReqData, State};
+        {error, Message} when is_list(Message) ->
+            {jiffy:encode(#{error => list_to_binary(Message)}), ReqData, State};
         {error, Message} ->
-            {jiffy:encode(#{error => Message})}
+            {jiffy:encode(#{error => Message}), ReqData, State}
      end.
