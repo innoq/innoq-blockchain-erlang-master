@@ -136,14 +136,21 @@ handle_cast({proof, Origin, JsonStart, JsonEnd}, State) ->
 			{noreply, State}
 	end;
 handle_cast({proof_found, Name, Block, Sha256}, State) ->
-    io:format("Proof found from ~p\n", [Name]),
-	case State#mining_state.origin of
-	  false -> % mining already done...
-    	{noreply, State};
-      _Any ->
-		State#mining_state.origin ! {ok, Block, Sha256},
-    	{noreply, State#mining_state{origin = false}}
-	end;
+  io:format("Proof found from ~p\n", [Name]),
+  Id = maps:get(<<"id">>, jiffy:decode(Block, [return_maps])),
+  CurrentId = maps:get(<<"id">>, jiffy:decode(<<(State#mining_state.json_start)/binary, "0"/binary, (State#mining_state.json_end)/binary>>, [return_maps])),
+	case CurrentId of
+    Id ->
+      case State#mining_state.origin of
+        false -> % mining already done...
+          {noreply, State};
+          _Any ->
+        State#mining_state.origin ! {ok, Block, Sha256},
+          {noreply, State#mining_state{origin = false}}
+      end;
+    _Any -> % proof found for old block... discard...
+       {noreply, State}
+  end;
 handle_cast({no_proof_found, Name, _Message}, State) ->
     io:format("No proof found from ~p\n", [Name]),
 	case State#mining_state.origin of
