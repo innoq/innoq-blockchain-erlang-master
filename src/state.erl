@@ -18,7 +18,8 @@
 	get_next_index/0,
 	append_to_chain/1,
 	append_transaction/1,
-	fetch_transactions/0
+	fetch_transactions/0,
+	get_transactions/0
 ]).
 
 %% gen_server callbacks
@@ -40,6 +41,9 @@
 %% -------------------------------------------------------------------
 fetch_transactions() ->
   gen_server:call(?MODULE, {fetch_transactions}).
+
+get_transactions() ->
+  gen_server:call(?MODULE, {get_transactions}).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -116,6 +120,9 @@ handle_call({fetch_transactions}, _From, State) when length(State#state.open_tra
 handle_call({fetch_transactions}, _From, State) ->
     {Head, Tail} = lists:split(5, State#state.open_transactions),
     {reply, {ok, Head}, State#state{open_transactions=Tail}};
+
+handle_call({get_transactions}, _From, State) ->
+    {reply, {ok, State#state.open_transactions}, State};
 
 handle_call({get_chain}, _From, State) ->
 	{reply, {ok, State#state.chain}, State};
