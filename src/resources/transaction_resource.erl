@@ -26,29 +26,24 @@ to_json(ReqData, State) ->
     end.
 
 find_transaction(Id) ->
-    case find_confirmed_transaction(Id) of
-        {ok, T} ->
-            {ok, maps:put(<<"confirmed">>, true, T)};
-        _ -> find_unconfirmed_transaction(Id)
+    case find_unconfirmed_transaction(Id) of
+        {ok, T} -> {ok, T};
+        _ -> find_confirmed_transaction(Id)
     end.
 
 find_confirmed_transaction(Id) ->
     {ok, Chain} = state:get_chain_content(),
     Transactions = lists:flatmap(fun(Block) -> maps:get(<<"transactions">>, Block) end, Chain),
-    Trans = lists:filter(fun(T) -> Id == maps:get(<<"id">>, T) end, Transactions),
-    case Trans of
-        [H] -> {ok, H};
-        _ -> {notfound}
-    end.
+    find_transaction_in_list(Id, Transactions, true).
 
 find_unconfirmed_transaction(Id) ->
     {ok, Transactions} = state:get_transactions(),
-    Trans = lists:filter(fun({T}) -> case proplist:lookup(<<"id">>, T) of
-                                         none -> false;
-                                         _ -> true
-                                     end
-                         end, Transactions),
+    Decoded = lists:map(fun(T) -> jiffy:decode(T, [return_maps]) end, Transactions),
+    find_transaction_in_list(Id, Decoded, false).
+
+find_transaction_in_list(Id, List, Confirmed) ->
+    Trans = lists:filter(fun(T) -> Id == maps:get(<<"id">>, T) end, List),
     case Trans of
-        [H|T] -> {ok, {lists:append(H, [{<<"confirmed">>, false}])}};
+        [H] -> {ok, maps:put(<<"confirmed">>, Confirmed, H)};
         _ -> {notfound}
     end.
