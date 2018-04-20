@@ -3,6 +3,7 @@
     init/1,
     content_types_provided/2,
     allowed_methods/2,
+    resource_exists/2,
     to_json/2
 ]).
 
@@ -10,18 +11,24 @@
 
 -spec init(list()) -> {ok, term()}.
 init([]) ->
-    {ok, undefined}.
+    {ok, {notfound}}.
 
 content_types_provided(RD, Ctx) ->
     {[ {"application/json", to_json} ], RD, Ctx}.
+
+resource_exists(ReqData, Ctx) ->
+    {id, Id} = lists:keyfind(id, 1, wrq:path_info(ReqData)),
+    case find_transaction(list_to_binary(Id)) of
+        {ok, T} -> {true, ReqData, {found, T}};
+        {notfound} -> {false, ReqData, Ctx}
+    end.
 
 allowed_methods(RD, Ctx) ->
     {['GET', 'HEAD'], RD, Ctx}.
 
 to_json(ReqData, State) ->
-    {id, Id} = lists:keyfind(id, 1, wrq:path_info(ReqData)),
-    case find_transaction(list_to_binary(Id)) of
-        {ok, T} -> {jiffy:encode(T, [pretty]), ReqData, State};
+    case State of
+        {found, T} -> {jiffy:encode(T, [pretty]), ReqData, State};
         {notfound} -> {jiffy:encode(#{<<"error">> => <<"not found">>}, [pretty]), ReqData, State}
     end.
 
