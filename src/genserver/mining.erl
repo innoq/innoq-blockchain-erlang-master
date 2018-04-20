@@ -27,7 +27,7 @@
 %%%===================================================================
 
 proof(JsonStart, JsonEnd) ->
-	StartTime = unixtime:gettime(),
+	  StartTime = unixtime:gettime(),
     gen_server:cast({global, mining}, {proof, self(), JsonStart, JsonEnd}),
     io:format("receiving...\n", []),
     io:format("PID: ~p\n", [self()]),
