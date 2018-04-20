@@ -11,6 +11,7 @@ dispatch() ->
         {[], master_resource, []},
         {["blocks"], blocks_resource, []},
         {["transactions"], transactions_resource, []},
+        {["transactions", id], transaction_resource, []},
         {["mine"], mine_resource, []}
     ]).
 
