@@ -1,5 +1,7 @@
 Project Skeleton for the master app.
 
+For the slave see https://github.com/innoq/innoq-blockchain-erlang-c-slave
+
 You should find in this directory:
 
 README : this file
