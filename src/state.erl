@@ -17,6 +17,7 @@
 	get_last_chain_element/0,
 	get_next_index/0,
 	append_to_chain/1,
+	append_transaction/1,
 	fetch_transactions/0
 ]).
 
@@ -56,6 +57,9 @@ get_next_index() ->
 
 append_to_chain(NewChainElement) ->
   gen_server:call(?MODULE, {append_to_chain, NewChainElement}).
+
+append_transaction(Payload) ->
+  gen_server:call(?MODULE, {append_transaction, Payload}).
 
 
 %%--------------------------------------------------------------------
@@ -105,9 +109,13 @@ init([]) ->
 			 {noreply, NewState :: term(), hibernate} |
 			 {stop, Reason :: term(), Reply :: term(), NewState :: term()} |
 			 {stop, Reason :: term(), NewState :: term()}.
-handle_call({fetch_transactions}, _From, State) ->
+handle_call({fetch_transactions}, _From, State) when length(State#state.open_transactions) =< 5 ->
     OpenTransactions = State#state.open_transactions,
 	{reply, {ok, OpenTransactions}, State#state{open_transactions=[]}};
+
+handle_call({fetch_transactions}, _From, State) ->
+    {Head, Tail} = lists:split(5, State#state.open_transactions),
+    {reply, {ok, Head}, State#state{open_transactions=Tail}};
 
 handle_call({get_chain}, _From, State) ->
 	{reply, {ok, State#state.chain}, State};
@@ -120,6 +128,11 @@ handle_call({get_next_index}, _From, State) ->
 
 handle_call({append_to_chain, NewChainElement}, _From, State) ->
 	{reply, {ok}, State#state{chain=State#state.chain++[NewChainElement]}};
+
+handle_call({append_transaction, Payload}, _From, State) ->
+    NewTransaction = Payload,
+    {reply, {ok},
+     State#state{open_transactions=lists:append(State#state.open_transactions, [NewTransaction])}};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
