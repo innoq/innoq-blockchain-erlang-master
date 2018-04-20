@@ -34,9 +34,9 @@ proof(JsonStart, JsonEnd) ->
     receive
 		{ok, Block, Sha256} ->
 			EndTime = unixtime:gettime(),
-			io:format("Block found in ~p seconds: ~p, ~p\n", [EndTime - StartTime, Block, Sha256]),
+			io:format("Block found in ~p seconds: ~p, ~p\n", [(EndTime - StartTime) / 1000, Block, Sha256]),
       Proof =  maps:get(<<"proof">>, jiffy:decode(Block, [return_maps])),
-			io:format("~p blocks per second\n", [Proof / (EndTime - StartTime)]),
+			io:format("~p blocks per second\n", [Proof * 1000 / (EndTime - StartTime)]),
       {ok, Block, Sha256};
 		{error, Message} ->
 	                io:format("Received an errror. Reason: ~p\n", [Message]),
