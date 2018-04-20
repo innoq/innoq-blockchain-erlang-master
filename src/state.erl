@@ -136,12 +136,7 @@ handle_call({get_next_index}, _From, State) ->
 handle_call({append_to_chain, NewChainElement}, _From, State) ->
 	{reply, {ok}, State#state{chain=State#state.chain++[NewChainElement]}};
 
-handle_call({append_transaction, Payload}, _From, State) ->
-    U = uuid:to_string(uuid:v4()),
-    NewTransaction = {[{<<"id">>, list_to_binary(U)},
-                       {<<"timestamp">>, unixtime:gettime()},
-                       {<<"payload">>, Payload}
-                      ]},
+handle_call({append_transaction, NewTransaction}, _From, State) ->
     {reply, {ok},
      State#state{open_transactions=lists:append(State#state.open_transactions, [jiffy:encode(NewTransaction)])}};
 
