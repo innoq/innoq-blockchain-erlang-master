@@ -35,11 +35,13 @@ proof(JsonStart, JsonEnd) ->
 			io:format("Received: ~p, ~p\n", [Block, Sha256]),
 			{ok, Block, Sha256};
 		{error, Message} ->
+	                io:format("Received an errror. Reason: ~p\n", [Message]),
 			{error, Message};
 		Any ->
 			io:format("Unknown message: ~p", [Any]),
 			{error, "Unknown message!"} %TODO: insert Any into error message!
 	after 15000 ->
+		io:format("No proof found in 15s. Timeout", []),
 		{error, "Timeout!"}
 	end.
 
