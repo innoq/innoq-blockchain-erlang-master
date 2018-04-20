@@ -10,6 +10,7 @@ dispatch() ->
     lists:flatten([
         {[], master_resource, []},
         {["blocks"], blocks_resource, []},
+        {["transactions"], transactions_resource, []},
         {["mine"], mine_resource, []}
     ]).
 
