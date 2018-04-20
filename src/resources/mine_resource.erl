@@ -18,8 +18,8 @@ content_types_provided(RD, Ctx) ->
 allowed_methods(RD, Ctx) ->
     {['GET', 'HEAD'], RD, Ctx}.
 
-fake_proof(JsonStart, JsonEnd) ->
-    {ok, <<JsonStart/binary, JsonEnd/binary>>, <<"-1">>}.
+%fake_proof(JsonStart, JsonEnd) ->
+%    {ok, <<JsonStart/binary, JsonEnd/binary>>, <<"-1">>}.
 
 -spec to_json(wrq:reqdata(), term()) -> {iodata(), wrq:reqdata(), term()}.
 to_json(ReqData, State) ->

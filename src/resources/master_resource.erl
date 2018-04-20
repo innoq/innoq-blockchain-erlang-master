@@ -24,12 +24,12 @@ to_json(ReqData, State) ->
     {ok, Transactions} = state:get_transactions(),
     {jiffy:encode(#{
         <<"nodeId">> => <<"4711-ncc-1901">>,
-        <<"currentBlockHeight">> => NextIndex,
+        <<"currentBlockHeight">> => NextIndex - 1,
         <<"internal">> => #{
             <<"current_transactions">> => Transactions,
             <<"nodes">> => lists:map(fun({Name, LoadFactor}) ->
                 #{
-                    <<"name">> => list_to_binary(Name),
+                    <<"name">> => Name,
                     <<"load_factor">> => LoadFactor
                 }
             end, mining:get_nodes())
