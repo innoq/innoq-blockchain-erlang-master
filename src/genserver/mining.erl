@@ -11,7 +11,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, proof/2]).
+-export([start_link/0, proof/2, get_nodes/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -42,6 +42,10 @@ proof(JsonStart, JsonEnd) ->
 	after 15000 ->
 		{error, "Timeout!"}
 	end.
+
+get_nodes() ->
+	{ok, Nodes} = gen_server:call({global, mining}, {get_nodes}),
+	Nodes.
 
 
 %%--------------------------------------------------------------------
@@ -90,6 +94,8 @@ init([]) ->
 			 {noreply, NewState :: term(), hibernate} |
 			 {stop, Reason :: term(), Reply :: term(), NewState :: term()} |
 			 {stop, Reason :: term(), NewState :: term()}.
+handle_call({get_nodes}, _From, State) ->
+    {reply, {ok, State#mining_state.nodes}, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.

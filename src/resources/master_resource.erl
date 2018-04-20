@@ -20,4 +20,16 @@ allowed_methods(RD, Ctx) ->
 
 -spec to_json(wrq:reqdata(), term()) -> {iodata(), wrq:reqdata(), term()}.
 to_json(ReqData, State) ->
-    {<<"{NotImplemented: 'yet'}">>, ReqData, State}.
+    {ok, NextIndex} = state:get_next_index(),
+    {jiffy:encode(#{
+        <<"nodeId">> => <<"4711-ncc-1901">>,
+        <<"currentBlockHeight">> => NextIndex,
+        <<"internal">> => #{
+            <<"nodes">> => lists:map(fun({Name, LoadFactor}) ->
+                #{
+                    <<"name">> => list_to_binary(Name),
+                    <<"load_factor">> => LoadFactor
+                }
+            end, mining:get_nodes())
+        }
+    }), ReqData, State}.
