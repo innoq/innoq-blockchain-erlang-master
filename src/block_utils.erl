@@ -3,8 +3,7 @@
 -export ([
   first_chain_element/0,
   build_new_block/0,
-  build_new_block_data/0,
-  chain_to_json/1
+  build_new_block_data/0
 ]).
 
 %%--------------------------------------------------------------------
@@ -34,5 +33,3 @@ build_new_block_data() ->
   [JsonStart, JsonEnd] = string:split(BlockJson, <<"\"ReplaceMePleeeaaase\"">>),
   {JsonStart, JsonEnd}.
 
-chain_to_json(Chain) ->
-  jiffy:encode(Chain, [pretty]).
