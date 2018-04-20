@@ -135,7 +135,7 @@ handle_cast({proof, Origin, JsonStart, JsonEnd}, State) ->
 handle_cast({proof_found, Name, Block, Sha256}, State) ->
   io:format("Proof found from ~p\n", [Name]),
   Index = maps:get(<<"index">>, jiffy:decode(Block, [return_maps])),
-  CurrentIndex = maps:get(<<"index">>, jiffy:decode(<<(State#mining_state.json_start)/binary, "0"/binary, (State#mining_state.json_end)/binary>>, [return_maps])),
+  CurrentIndex = maps:get(<<"index">>, jiffy:decode(<<(State#mining_state.json_start)/binary, <<"0">>/binary, (State#mining_state.json_end)/binary>>, [return_maps])),
 	case CurrentIndex of
     Index ->
       case State#mining_state.origin of
