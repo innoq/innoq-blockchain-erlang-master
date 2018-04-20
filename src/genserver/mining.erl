@@ -27,7 +27,7 @@
 %%%===================================================================
 
 proof(JsonStart, JsonEnd) ->
-    gen_server:cast({global, ?SERVER}, {proof, self(), JsonStart, JsonEnd}),
+    gen_server:cast({global, mining}, {proof, self(), JsonStart, JsonEnd}),
     io:format("receiving...\n", []),
     io:format("PID: ~p\n", [self()]),
     receive
@@ -108,23 +108,23 @@ handle_call(_Request, _From, State) ->
 
 handle_cast({node_up, NewNode = {Name, _LoadFactor}}, State) ->
     io:format("Node ~p is up.\n", [Name]),
-    {noreply, State#mining_state{nodes = State#mining_state.nodes + [NewNode]}};
+    {noreply, State#mining_state{nodes = State#mining_state.nodes ++ [NewNode]}};
 handle_cast({node_down, {Name}}, State) ->
     io:format("Node ~p is down.\n", [Name]),
     {noreply, State#mining_state{nodes = lists:keydelete(Name, 1, State#mining_state.nodes)}};
 handle_cast({proof, Origin, JsonStart, JsonEnd}, State) ->
+        io:format("proof called.\n", []),
 	case State#mining_state.origin of
 		false ->
-			NewState = init_mining_state(Origin, JsonStart, JsonEnd, State),
-			lists:foreach(fun(Node) ->
-				NewState = instruct_node(Node, NewState)
-			end, State#mining_state.nodes),
+			InitState = init_mining_state(Origin, JsonStart, JsonEnd, State),
+			NewState = lists:foldl(fun instruct_node/2, InitState, State#mining_state.nodes),
 			{noreply, NewState};
 		_Any ->
 			Origin ! {error, "Mining busy!"},
 			{noreply, State}
 	end;
 handle_cast({proof_found, _Name, Block, Sha256}, State) ->
+    io:format("proof_found called\n", []),
 	case State#mining_state.origin of
 	  false -> % mining already done...
     	{noreply, State};
@@ -133,15 +133,16 @@ handle_cast({proof_found, _Name, Block, Sha256}, State) ->
     	{noreply, State#mining_state{origin = false}}
 	end;
 handle_cast({no_proof_found, Name, _Message}, State) ->
+    io:format("nod_proof_found called.\n", []),
 	case State#mining_state.origin of
 	  false -> % mining already done...
     	{noreply, State};
       _Any ->
-	  	Node = list:keyfind(Name, 1, State#mining_state.nodes),
+	  	Node = lists:keyfind(Name, 1, State#mining_state.nodes),
     	{noreply, instruct_node(Node, State)}
 	end;
-handle_cast(_Request, State) ->
-    io:format("Wrong Cast\n", []),
+handle_cast(Request, State) ->
+    io:format("Wrong Cast: Got: ~p\n", [Request]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -206,6 +207,7 @@ init_mining_state(Origin, JsonStart, JsonEnd, State) ->
 	State#mining_state{json_start = JsonStart, json_end = JsonEnd, last_max = 0, origin = Origin}.
 
 instruct_node({Name, LoadFactor}, State) ->
-	to = State#mining_state.last_max + (100000 * LoadFactor),
-	gen_server:cast({global, Name}, {mine, State#mining_state.json_start, State#mining_state.json_end, State#mining_state.last_max + 1, to, 6}),
-	State#mining_state{last_max = to}.
+    io:format("Calling Node: ~p, LoadFactor: ~p\n", [Name, LoadFactor]),
+	To = State#mining_state.last_max + (100000 * LoadFactor),
+	gen_server:cast({global, Name}, {mine, State#mining_state.json_start, State#mining_state.json_end, State#mining_state.last_max + 1, To, 6}),
+	State#mining_state{last_max = To}.
