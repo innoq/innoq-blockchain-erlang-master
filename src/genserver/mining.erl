@@ -217,5 +217,5 @@ init_mining_state(Origin, JsonStart, JsonEnd, State) ->
 instruct_node({Name, LoadFactor}, State) ->
     io:format("Calling Node: ~p, LoadFactor: ~p\n", [Name, LoadFactor]),
 	To = State#mining_state.last_max + (1000000 * LoadFactor),
-	gen_server:cast({global, Name}, {mine, State#mining_state.json_start, State#mining_state.json_end, State#mining_state.last_max + 1, To, 6}),
+	gen_server:cast({global, Name}, {mine, State#mining_state.json_start, State#mining_state.json_end, State#mining_state.last_max, To, 6}),
 	State#mining_state{last_max = To}.
