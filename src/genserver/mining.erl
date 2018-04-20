@@ -27,13 +27,17 @@
 %%%===================================================================
 
 proof(JsonStart, JsonEnd) ->
+	StartTime = unixtime:gettime(),
     gen_server:cast({global, mining}, {proof, self(), JsonStart, JsonEnd}),
     io:format("receiving...\n", []),
     io:format("PID: ~p\n", [self()]),
     receive
 		{ok, Block, Sha256} ->
-			io:format("Received: ~p, ~p\n", [Block, Sha256]),
-			{ok, Block, Sha256};
+			EndTime = unixtime:gettime(),
+			io:format("Block found in ~p seconds: ~p, ~p\n", [EndTime - StartTime, Block, Sha256]),
+      Proof =  maps:get(<<"proof">>, jiffy:decode(Block, [return_maps])),
+			io:format("~p blocks per second\n", [Proof / (EndTime - StartTime)]),
+      {ok, Block, Sha256};
 		{error, Message} ->
 	                io:format("Received an errror. Reason: ~p\n", [Message]),
 			{error, Message};
