@@ -40,8 +40,8 @@ proof(JsonStart, JsonEnd) ->
 		Any ->
 			io:format("Unknown message: ~p", [Any]),
 			{error, "Unknown message!"} %TODO: insert Any into error message!
-	after 15000 ->
-		io:format("No proof found in 15s. Timeout", []),
+	after 60000 ->
+		io:format("No proof found in 60s. Timeout", []),
 		{error, "Timeout!"}
 	end.
 
