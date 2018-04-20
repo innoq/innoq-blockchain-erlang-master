@@ -19,6 +19,9 @@
 
 -define(SERVER, ?MODULE).
 
+-record(mining_state, {origin, json_start, json_end, last_max, nodes}).
+
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -27,20 +30,18 @@ proof(JsonStart, JsonEnd) ->
     gen_server:cast({global, ?SERVER}, {proof, self(), JsonStart, JsonEnd}),
     io:format("receiving...\n", []),
     io:format("PID: ~p\n", [self()]),
-    {RBlock, RSha256} = receive
-			    {ok, Block, Sha256} ->
-				io:format("Received: ~p, ~p\n", [Block, Sha256]),
-				{Block, Sha256};
-                            {error, Message} ->
-				{"", Message}
-			    Any ->
-				io:format("~p", [Any])
-			after 15000 ->
-				{"", "timeout"}
-			end,
-    %{ok, FakeBlock} = application:get_env(master, genesis_block),
-    %{ok, FakeBlockSha256} = application:get_env(master, genesis_block_sha256),
-    {ok, RBlock, RSha256}.
+    receive
+		{ok, Block, Sha256} ->
+			io:format("Received: ~p, ~p\n", [Block, Sha256]),
+			{ok, Block, Sha256};
+		{error, Message} ->
+			{error, Message};
+		Any ->
+			io:format("~p", [Any]),
+			{error, "Unknown message!"} %TODO: insert Any into error message!
+	after 15000 ->
+		{error, "Timeout!"}
+	end.
 
 
 %%--------------------------------------------------------------------
@@ -72,7 +73,7 @@ start_link() ->
 			      ignore.
 init([]) ->
     process_flag(trap_exit, true),
-    {ok, #{}}.
+    {ok, #mining_state{nodes = [], origin = false}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -105,19 +106,40 @@ handle_call(_Request, _From, State) ->
 			 {noreply, NewState :: term(), hibernate} |
 			 {stop, Reason :: term(), NewState :: term()}.
 
-handle_cast({node_up, Name}, State) ->
+handle_cast({node_up, NewNode = {Name, _LoadFactor}}, State) ->
     io:format("Node ~p is up.\n", [Name]),
-    {noreply, State};
-handle_cast({node_down}, State) ->    
-    {noreply, State};
-handle_cast({proof_done, Origin, Block, Sha256}, State) ->
-    Origin ! {ok, Block, Sha256},
-    {noreply, State};
+    {noreply, State#mining_state{nodes = State#mining_state.nodes + [NewNode]}};
+handle_cast({node_down, {Name}}, State) ->
+    io:format("Node ~p is down.\n", [Name]),
+    {noreply, State#mining_state{nodes = lists:keydelete(Name, 1, State#mining_state.nodes)}};
 handle_cast({proof, Origin, JsonStart, JsonEnd}, State) ->
-    %{ok, FakeBlock} = application:get_env(master, genesis_block),
-    %{ok, FakeBlockSha256} = application:get_env(master, genesis_block_sha256),
-    gen_server:cast({global, slave_server}, {mine, Origin, JsonStart, JsonEnd, 0, 1000000, 2}),
-    {noreply, State};
+	case State#mining_state.origin of
+		false ->
+			NewState = init_mining_state(Origin, JsonStart, JsonEnd, State),
+			lists:foreach(fun(Node) ->
+				NewState = instruct_node(Node, NewState)
+			end, State#mining_state.nodes),
+			{noreply, NewState};
+		_Any ->
+			Origin ! {error, "Mining busy!"},
+			{noreply, State}
+	end;
+handle_cast({proof_found, _Name, Block, Sha256}, State) ->
+	case State#mining_state.origin of
+	  false -> % mining already done...
+    	{noreply, State};
+      _Any ->
+		State#mining_state.origin ! {ok, Block, Sha256},
+    	{noreply, State#mining_state{origin = false}}
+	end;
+handle_cast({no_proof_found, Name, _Message}, State) ->
+	case State#mining_state.origin of
+	  false -> % mining already done...
+    	{noreply, State};
+      _Any ->
+	  	Node = list:keyfind(Name, 1, State#mining_state.nodes),
+    	{noreply, instruct_node(Node, State)}
+	end;
 handle_cast(_Request, State) ->
     io:format("Wrong Cast\n", []),
     {noreply, State}.
@@ -172,7 +194,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec format_status(Opt :: normal | terminate,
-		    Status :: list()) -> Status :: term().
+	Status :: list()) -> Status :: term().
 format_status(_Opt, Status) ->
     Status.
 
@@ -180,3 +202,10 @@ format_status(_Opt, Status) ->
 %%% Internal functions
 %%%===================================================================
 
+init_mining_state(Origin, JsonStart, JsonEnd, State) ->
+	State#mining_state{json_start = JsonStart, json_end = JsonEnd, last_max = 0, origin = Origin}.
+
+instruct_node({Name, LoadFactor}, State) ->
+	to = State#mining_state.last_max + (100000 * LoadFactor),
+	gen_server:cast({global, Name}, {mine, State#mining_state.json_start, State#mining_state.json_end, State#mining_state.last_max + 1, to, 6}),
+	State#mining_state{last_max = to}.
