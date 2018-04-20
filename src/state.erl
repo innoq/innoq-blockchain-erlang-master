@@ -19,7 +19,8 @@
 	append_to_chain/1,
 	append_transaction/1,
 	fetch_transactions/0,
-	get_transactions/0
+	get_transactions/0,
+        get_chain_content/0
 ]).
 
 %% gen_server callbacks
@@ -52,6 +53,12 @@ get_transactions() ->
 %% -------------------------------------------------------------------
 get_chain() ->
   gen_server:call(?MODULE, {get_chain}).
+
+get_chain_content() ->
+    {ok, Chain} = get_chain(),
+    {ok, lists:map(fun (BlockData) ->
+                           jiffy:decode(maps:get(json, BlockData), [return_maps])
+                   end, Chain)}.
 
 get_last_chain_element() ->
   gen_server:call(?MODULE, {get_last_chain_element}).

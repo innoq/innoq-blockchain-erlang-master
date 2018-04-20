@@ -129,8 +129,8 @@ handle_cast({proof, Origin, JsonStart, JsonEnd}, State) ->
 			Origin ! {error, "Mining busy!"},
 			{noreply, State}
 	end;
-handle_cast({proof_found, _Name, Block, Sha256}, State) ->
-    io:format("proof_found called\n", []),
+handle_cast({proof_found, Name, Block, Sha256}, State) ->
+    io:format("Proof found from ~p\n", [Name]),
 	case State#mining_state.origin of
 	  false -> % mining already done...
     	{noreply, State};
@@ -139,7 +139,7 @@ handle_cast({proof_found, _Name, Block, Sha256}, State) ->
     	{noreply, State#mining_state{origin = false}}
 	end;
 handle_cast({no_proof_found, Name, _Message}, State) ->
-    io:format("nod_proof_found called.\n", []),
+    io:format("No proof found from ~p\n", [Name]),
 	case State#mining_state.origin of
 	  false -> % mining already done...
     	{noreply, State};

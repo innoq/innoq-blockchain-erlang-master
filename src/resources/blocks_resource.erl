@@ -20,5 +20,11 @@ allowed_methods(RD, Ctx) ->
 
 -spec to_json(wrq:reqdata(), term()) -> {iodata(), wrq:reqdata(), term()}.
 to_json(ReqData, State) ->
-    {ok, Chain} = state:get_chain(),
-    {block_utils:chain_to_json(Chain), ReqData, State}.
+    {ok, Chain} = state:get_chain_content(),
+    {chain_to_json(Chain), ReqData, State}.
+
+chain_to_json(Chain) ->
+    R = #{<<"blocks">> => Chain,
+          <<"blockHeight">> => length(Chain)
+         },
+    jiffy:encode(R, [pretty]).
