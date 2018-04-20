@@ -22,11 +22,13 @@ allowed_methods(RD, Ctx) ->
 to_json(ReqData, State) ->
     {ok, NextIndex} = state:get_next_index(),
     {ok, Transactions} = state:get_transactions(),
+    {ok, Chain} = state:get_chain(),
     {jiffy:encode(#{
         <<"nodeId">> => <<"4711-ncc-1901">>,
         <<"currentBlockHeight">> => NextIndex - 1,
         <<"internal">> => #{
             <<"current_transactions">> => Transactions,
+            <<"chain">> => Chain,
             <<"nodes">> => lists:map(fun({Name, LoadFactor}) ->
                 #{
                     <<"name">> => Name,
